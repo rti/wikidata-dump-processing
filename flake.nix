@@ -39,8 +39,17 @@
       # ALWAYS sync with workerCount in main.tf
       workerCount = 3;
 
-      manager-hostname = "dask-manager";
-      worker-hostnames = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
+      managerHostname = "dask-manager";
+      workerHostnames = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
+
+      devPackages = with pkgs; with pkgs.python3Packages; [
+        (pkgs.python3.withPackages python-packages)
+        pyright
+        black
+        pip
+        ipython
+        coverage
+     ];
 
       mkSystemConfig = hostname: modules: nixpkgs.lib.nixosSystem {
         inherit system;
@@ -51,35 +60,30 @@
           (import ./disko-config.nix)
           ({ ... }: {
             networking.hostName = hostname;
+            environment.systemPackages = devPackages;
           })
         ] ++ modules;
       };
     in
     {
       nixosConfigurations = {
-        "${manager-hostname}" = mkSystemConfig manager-hostname [
+        "${managerHostname}" = mkSystemConfig managerHostname [
           ./manager-configuration.nix
         ];
         } // 
-        nixpkgs.lib.genAttrs worker-hostnames (hostname: mkSystemConfig hostname [
+        nixpkgs.lib.genAttrs workerHostnames (hostname: mkSystemConfig hostname [
           ./worker-configuration.nix
        ]);
 
       devShell.${system} = pkgs.mkShell {
-        packages = with pkgs; with pkgs.python3Packages; [
-
-          (pkgs.python3.withPackages python-packages)
-          pyright
-          black
-          pip
-          ipython
-          coverage
+        packages = 
+          devPackages ++ 
+          [
 
           inputs.disko.packages.x86_64-linux.disko
           inputs.nixos-anywhere.packages.x86_64-linux.nixos-anywhere
           (pkgs.opentofu.withPlugins (p: [ p.hcloud ]))
           pkgs.tmux
-
 
           (pkgs.writeShellScriptBin "provision" ''
             set -e

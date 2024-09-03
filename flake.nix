@@ -66,18 +66,15 @@
        ]);
 
       devShell.${system} = pkgs.mkShell {
-        buildInputs = with pkgs; with pkgs.python3Packages; [
+        packages = with pkgs; with pkgs.python3Packages; [
 
           (pkgs.python3.withPackages python-packages)
-
           pyright
           black
           pip
           ipython
           coverage
-        ];
 
-        packages = [
           inputs.disko.packages.x86_64-linux.disko
           inputs.nixos-anywhere.packages.x86_64-linux.nixos-anywhere
           (pkgs.opentofu.withPlugins (p: [ p.hcloud ]))

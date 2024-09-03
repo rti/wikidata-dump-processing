@@ -1,0 +1,14 @@
+.direnv
+.env
+venv
+__pycache__
+.coverage
+*cache*.json
+text_representations/*.txt
+text_representations_backup/*.txt
+
+.odo
+*.db
+*.json
+*.jsonl
+*.bz2

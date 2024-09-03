@@ -1,13 +1,16 @@
 .direnv
 .env
 venv
+
 __pycache__
 .coverage
-*cache*.json
-text_representations/*.txt
-text_representations_backup/*.txt
 
-.odo
+.tofu/*
+.terraform/*
+.terraform.lock.hcl
+
+public-ipv4-*
+
 *.db
 *.json
 *.jsonl

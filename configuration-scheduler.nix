@@ -26,15 +26,23 @@
     }];
 
     banner = ''
-           _           _                         _             
-        __| | __ _ ___| | __ __      _____  _ __| | _____ _ __ 
-       / _` |/ _` / __| |/ / \ \ /\ / / _ \| '__| |/ / _ \ '__|
-      | (_| | (_| \__ \   <   \ V  V / (_) | |  |   <  __/ |   
-       \__,_|\__,_|___/_|\_\   \_/\_/ \___/|_|  |_|\_\___|_|   
+           _           _               _              _       _
+        __| | __ _ ___| | __  ___  ___| |__   ___  __| |_   _| | ___ _ __
+       / _` |/ _` / __| |/ / / __|/ __| '_ \ / _ \/ _` | | | | |/ _ \ '__|
+      | (_| | (_| \__ \   <  \__ \ (__| | | |  __/ (_| | |_| | |  __/ |
+       \__,_|\__,_|___/_|\_\ |___/\___|_| |_|\___|\__,_|\__,_|_|\___|_|
 
-          *** ${config.networking.hostName} ***
+          *** hostname: ${config.networking.hostName} ***
     '';
   };
+
+
+  networking.firewall.allowedTCPPorts = [
+    8786 # dask worker listener
+    8787 # dask webinterface
+  ];
+
+  # TODO: service running $ dask scheduler --host 0.0.0.0  
 
   users.users.root.openssh.authorizedKeys.keys = [
     # roti Yubikey 5 Nano

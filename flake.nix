@@ -39,8 +39,8 @@
       # ALWAYS sync with workerCount in main.tf
       workerCount = 3;
 
-      managerHostname = "dask-manager";
-      workerHostnames = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
+      hostnameScheduler = "dask-scheduler";
+      hostnamesWorkers = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
 
       devPackages = with pkgs; with pkgs.python3Packages; [
         (pkgs.python3.withPackages python-packages)
@@ -67,13 +67,12 @@
     in
     {
       nixosConfigurations = {
-        "${managerHostname}" = mkSystemConfig managerHostname [
-          ./manager-configuration.nix
+        "${hostnameScheduler}" = mkSystemConfig hostnameScheduler [
+          ./configuration-scheduler.nix
         ];
-        } // 
-        nixpkgs.lib.genAttrs workerHostnames (hostname: mkSystemConfig hostname [
-          ./worker-configuration.nix
-       ]);
+      } // nixpkgs.lib.genAttrs hostnamesWorkers (hostname: mkSystemConfig hostname [
+        ./configuration-worker.nix
+      ]);
 
       devShell.${system} = pkgs.mkShell {
         packages = 
@@ -82,20 +81,22 @@
 
           inputs.disko.packages.x86_64-linux.disko
           inputs.nixos-anywhere.packages.x86_64-linux.nixos-anywhere
-          (pkgs.opentofu.withPlugins (p: [ p.hcloud ]))
+          (pkgs.opentofu.withPlugins (p: [ p.hcloud p.hetznerdns ]))
           pkgs.tmux
 
           (pkgs.writeShellScriptBin "provision" ''
             set -e
             tofu init -reconfigure
-            tofu apply -var "hcloud_token=$(pass hetzner.com/dask-api-token)"
+            tofu apply \
+              -var "hcloud_token=$(pass hetzner.com/dask-api-token)" \
+              -var "hdns_token=$(pass apitoken/hetznerdns)"
           '')
 
           (pkgs.writeShellScriptBin "bootstrap" ''
             set -e
 
-            server_ip=$(cat "./public-ipv4-manager")
-            nixos-anywhere --flake ".#dask-manager" "root@''${server_ip}" &
+            server_ip=$(cat "./public-ipv4-scheduler")
+            nixos-anywhere --flake ".#dask-scheduler" "root@''${server_ip}" &
 
             for file in ./public-ipv4-worker-*; do
               server_ip=$(cat "$file")
@@ -109,8 +110,8 @@
           (pkgs.writeShellScriptBin "deploy" ''
             set -e
 
-            server_ip=$(cat "./public-ipv4-manager")
-            nixos-rebuild switch --flake ".#dask-manager" \
+            server_ip=$(cat "./public-ipv4-scheduler")
+            nixos-rebuild switch --flake ".#dask-scheduler" \
               --target-host root@"''${server_ip}" --use-substitutes &
 
             for file in ./public-ipv4-worker-*; do
@@ -123,14 +124,10 @@
             wait
           '')
 
-          (pkgs.writeShellScriptBin "shell" ''
+          (pkgs.writeShellScriptBin "shell-workers" ''
             set -e
 
-            tmux new-session -d -s servers
-
-            server_ip=$(cat "./public-ipv4-manager")
-            tmux split-window -h "ssh root@''${server_ip}"
-            tmux select-layout tiled
+            tmux new-session -d -s workers
 
             for file in ./public-ipv4-worker-*; do
               server_ip=$(cat "$file")
@@ -144,9 +141,15 @@
 
             tmux setw synchronize-panes on
 
-            tmux attach-session -t servers
+            tmux attach-session -t workers
           '')
 
+          (pkgs.writeShellScriptBin "shell-schduler" ''
+            set -e
+
+            server_ip=$(cat "./public-ipv4-scheduler")
+            ssh root@''${server_ip}
+          '')
         ];
 
         shellHook = ''
@@ -154,10 +157,11 @@
 
           cat << _EOF
 
-        provision  - rent servers from hetzner
-        bootstrap  - install nixos and deploy configuration
-        deploy     - redeploy configuration
-        shell      - ssh into machines using tmux
+        provision      - rent servers from hetzner
+        bootstrap      - install nixos and deploy configuration
+        deploy         - redeploy configuration
+        shell-workers  - ssh into worker machines using tmux
+        shell-schduler - ssh into scheduler machine
 _EOF
         '';
       };

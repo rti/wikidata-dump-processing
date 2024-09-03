@@ -26,15 +26,24 @@
     }];
 
     banner = ''
-           _           _
-        __| | __ _ ___| | __  _ __ ___   __ _ _ __   __ _  __ _  ___ _ __
-       / _` |/ _` / __| |/ / | '_ ` _ \ / _` | '_ \ / _` |/ _` |/ _ \ '__|
-      | (_| | (_| \__ \   <  | | | | | | (_| | | | | (_| | (_| |  __/ |
-       \__,_|\__,_|___/_|\_\ |_| |_| |_|\__,_|_| |_|\__,_|\__, |\___|_|
-                                                    |___/
-          *** ${config.networking.hostName} ***
+           _           _                         _             
+        __| | __ _ ___| | __ __      _____  _ __| | _____ _ __ 
+       / _` |/ _` / __| |/ / \ \ /\ / / _ \| '__| |/ / _ \ '__|
+      | (_| | (_| \__ \   <   \ V  V / (_) | |  |   <  __/ |   
+       \__,_|\__,_|___/_|\_\   \_/\_/ \___/|_|  |_|\_\___|_|   
+
+          *** hostname: ${config.networking.hostName} ***
     '';
   };
+
+  networking.firewall.allowedTCPPorts = [
+    # dask worker port
+    3001
+    # dask nanny port
+    4001
+  ];
+
+  # TODO: service running $ dask worker dask-scheduler.rtti.de:8786 --worker-port=3001 --nanny-port=4001
 
   users.users.root.openssh.authorizedKeys.keys = [
     # roti Yubikey 5 Nano

@@ -267,7 +267,7 @@ def handle_insert_queue():
 if __name__ == "__main__":
     setproctitle.setproctitle("wddump-main")
 
-    conn = sqlite3.connect("entities.db")
+    conn = sqlite3.connect("/mnt/entities.db")
 
     global cursor
     cursor = conn.cursor()

@@ -30,7 +30,7 @@ class ResultHandler:
     @classmethod
     def init(cls):
         cls.counter = 0
-        cls.conn = sqlite3.connect("entities_test.db")
+        cls.conn = sqlite3.connect("/mnt/entities.db")
         cls.cursor = cls.conn.cursor()
         cls.cursor.execute(
             " CREATE TABLE IF NOT EXISTS entities ("
@@ -72,4 +72,4 @@ class ResultHandler:
 
 if __name__ == "__main__":
     ResultHandler.init()
-    read_wikidata_dump("/wikidata.json", process_line, ResultHandler.handle_result)
+    read_wikidata_dump("/mnt/wddump.json.gz", process_line, ResultHandler.handle_result)

@@ -42,8 +42,9 @@
       hostnameScheduler = "dask-scheduler";
       hostnamesWorkers = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
 
-      devPackages = with pkgs; with pkgs.python3Packages; [
-        (pkgs.python3.withPackages python-packages)
+      pythonWithPackages = (pkgs.python3.withPackages python-packages);
+      pythonEnv = with pkgs; with pkgs.python3Packages; [
+        pythonWithPackages
         pyright
         black
         pip
@@ -60,7 +61,7 @@
           (import ./disko-config.nix)
           ({ ... }: {
             networking.hostName = hostname;
-            environment.systemPackages = devPackages;
+            environment.systemPackages = pythonEnv;
           })
         ] ++ modules;
       };
@@ -74,9 +75,20 @@
         ./configuration-worker.nix
       ]);
 
+      packages = {
+        dockerImage = pkgs.dockerTools.buildLayeredImage {
+          name = "wikidata-dump-processing";
+          tag = "latest";
+          # TODO: copy self to root it messy
+          contents = with pkgs; [ pythonEnv bash coreutils self ];
+          # config.Cmd = "${pythonWithPackages}/bin/python";
+          config.Cmd = "${pkgs.bash}/bin/bash";
+        };
+      };
+
       devShell.${system} = pkgs.mkShell {
         packages = 
-          devPackages ++ 
+          pythonEnv ++ 
           [
 
           inputs.disko.packages.x86_64-linux.disko
@@ -144,11 +156,20 @@
             tmux attach-session -t workers
           '')
 
-          (pkgs.writeShellScriptBin "shell-schduler" ''
+          (pkgs.writeShellScriptBin "shell-scheduler" ''
             set -e
 
             server_ip=$(cat "./public-ipv4-scheduler")
             ssh root@''${server_ip}
+          '')
+
+          (pkgs.writeShellScriptBin "run-in-docker" ''
+            set -e
+
+            nix build .#packages.dockerImage
+            docker load -i result
+            docker compose up
+            # docker run --rm -i -t wikidata-dump-processing
           '')
         ];
 
@@ -157,11 +178,12 @@
 
           cat << _EOF
 
-        provision      - rent servers from hetzner
-        bootstrap      - install nixos and deploy configuration
-        deploy         - redeploy configuration
-        shell-workers  - ssh into worker machines using tmux
-        shell-schduler - ssh into scheduler machine
+        provision       - rent servers from hetzner
+        bootstrap       - install nixos and deploy configuration
+        deploy          - redeploy configuration
+        shell-workers   - ssh into worker machines using tmux
+        shell-scheduler - ssh into scheduler machine
+        run-in-docker   - build and run in a local docker container
 _EOF
         '';
       };

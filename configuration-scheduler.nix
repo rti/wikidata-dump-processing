@@ -37,12 +37,23 @@
   };
 
 
+  fileSystems."/mnt" = { 
+    device = "/dev/sdb";
+    fsType = "ext4";
+  };
+
   networking.firewall.allowedTCPPorts = [
     8786 # dask worker listener
     8787 # dask webinterface
   ];
 
+
+  environment.systemPackages = with pkgs; [
+    wget
+  ];
+
   # TODO: service running $ dask scheduler --host 0.0.0.0  
+  # wget --output-document /mnt/wddump-latest-all.json.gz https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz
 
   users.users.root.openssh.authorizedKeys.keys = [
     # roti Yubikey 5 Nano

@@ -110,6 +110,14 @@ resource "hcloud_server" "dask-scheduler" {
   }
 }
 
+resource "hcloud_volume" "dask-scheduler-storage" {
+  name       = "dask-scheduler-storage"
+  size       = 150
+  server_id  = hcloud_server.dask-scheduler.id
+  format     = "ext4"
+  automount  = true  # Automatically mount the volume
+}
+
 resource "hetznerdns_record" "dask-schduler-A" {
   name    = "dask-scheduler"
   zone_id = data.hetznerdns_zone.rtti_de.id

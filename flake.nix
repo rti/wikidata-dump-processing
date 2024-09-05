@@ -22,7 +22,6 @@
         torch
         tqdm
         sentence-transformers
-        transformers
         psycopg
         aiofiles
         dask

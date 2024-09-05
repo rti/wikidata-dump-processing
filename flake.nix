@@ -18,7 +18,7 @@
         #   rocmSupport = true;
         # }; 
       };
-      python-packages = ps: with ps; [
+      pythonPackages = ps: with ps; [
         torch
         tqdm
         sentence-transformers
@@ -42,7 +42,7 @@
       hostnameScheduler = "dask-scheduler";
       hostnamesWorkers = builtins.genList (n: "dask-worker-${toString (n+1)}") workerCount;
 
-      pythonWithPackages = (pkgs.python3.withPackages python-packages);
+      pythonWithPackages = (pkgs.python3.withPackages pythonPackages);
       pythonEnv = with pkgs; with pkgs.python3Packages; [
         pythonWithPackages
         pyright
@@ -82,12 +82,21 @@
         dockerImage = pkgs.dockerTools.streamLayeredImage {
           name = "roti4wmde/wikidata-dump-processing";
           tag = "latest";
-          contents = with pkgs; [ pythonWithPackages bash coreutils ];
+          # TODO: messy, self is in /
+          contents = with pkgs; [ pythonWithPackages bash coreutils self ];
           # TODO: do not copy .gitignore'd files
-          fakeRootCommands = "cp -r ${self} /workspace";
+          # enableFakechroot = true;
+          # fakeRootCommands = ''
+          #   set -xe
+          #   cp -r ${self} /workspace;
+          #   cp ${self}/entrypoint-worker.sh /entrypoint-worker.sh
+          #   chmod a+x /entrypoint-worker.sh
+          # '';
           config = {
-            Cmd = ["${pythonWithPackages}/bin/python" "-m" "dask" "worker" "dask-scheduler.rtti.de:8786"];
+            # Cmd = ["${pythonWithPackages}/bin/python" "-m" "dask" "worker" "dask-scheduler.rtti.de:8786"];
             # Cmd = ["${pkgs.bash}/bin/bash"];
+            # Entrypoint = ["${pythonWithPackages}/bin/python"];
+            Entrypoint = ["/entrypoint-worker.sh"];
           };
         };
       };
@@ -173,7 +182,7 @@
             set -e
 
             nix build .#packages.dockerImage
-            docker load -i result
+            ./result | docker load
             docker compose up
             # docker run --rm -i -t wikidata-dump-processing
           '')

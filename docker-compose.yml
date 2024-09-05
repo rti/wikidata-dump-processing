@@ -1,12 +1,12 @@
 services:
 
   app:
-    image: wikidata-dump-processing
+    image: roti4wmde/wikidata-dump-processing
     volumes:
       - app-cache:/root/.cache
-      - type: bind
-        source: .
-        target: /workspace
+      # - type: bind
+      #   source: .
+      #   target: /workspace
       - type: bind
         source: ${WIKIDATA_DUMP_FILE}
         target: /mnt/wddump.json.gz    
@@ -14,10 +14,10 @@ services:
         source: ${LABELS_DB_FILE}
         target: /mnt/entities.db
 
+    # entrypoint: ["bash"]
+    # entrypoint: ["/entrypoint-worker.sh"]
     # command: ["dask", "scheduler"]
-    command: ["python", "/workspace/wddump_build_label_db.py"] # mounted sources
-    # command: ["python", "/wddump_build_label_db.py"] # built in sources
-    # command: ["bash"]
+    # command: ["python", "/workspace/wddump_build_label_db.py"]
 
     # ports:
     #   - 8787:8787

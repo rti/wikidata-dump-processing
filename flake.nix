@@ -82,20 +82,17 @@
         dockerImage = pkgs.dockerTools.streamLayeredImage {
           name = "roti4wmde/wikidata-dump-processing";
           tag = "latest";
-          # TODO: messy, self is in /
-          contents = with pkgs; [ pythonWithPackages bash coreutils self ];
+          contents = with pkgs; [ pythonWithPackages bash coreutils ];
           # TODO: do not copy .gitignore'd files
-          # enableFakechroot = true;
-          # fakeRootCommands = ''
-          #   set -xe
-          #   cp -r ${self} /workspace;
-          #   cp ${self}/entrypoint-worker.sh /entrypoint-worker.sh
-          #   chmod a+x /entrypoint-worker.sh
-          # '';
+          enableFakechroot = true;
+          fakeRootCommands = ''
+            set -xe
+            mkdir /workspace
+            cp -r ${self}/* /workspace
+            cp ${self}/entrypoint-worker.sh /entrypoint-worker.sh
+            chmod a+x /entrypoint-worker.sh
+          '';
           config = {
-            # Cmd = ["${pythonWithPackages}/bin/python" "-m" "dask" "worker" "dask-scheduler.rtti.de:8786"];
-            # Cmd = ["${pkgs.bash}/bin/bash"];
-            # Entrypoint = ["${pythonWithPackages}/bin/python"];
             Entrypoint = ["/entrypoint-worker.sh"];
           };
         };

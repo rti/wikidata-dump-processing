@@ -61,7 +61,10 @@
           (import ./disko-config.nix)
           ({ ... }: {
             networking.hostName = hostname;
-            environment.systemPackages = pythonEnv;
+            environment.systemPackages = pythonEnv ++ [ self ];
+            system.activationScripts.setup-workspace.text = ''
+              cp -r ${self} /workspace
+            '';
           })
         ] ++ modules;
       };
@@ -76,13 +79,16 @@
       ]);
 
       packages = {
-        dockerImage = pkgs.dockerTools.buildLayeredImage {
-          name = "wikidata-dump-processing";
+        dockerImage = pkgs.dockerTools.streamLayeredImage {
+          name = "roti4wmde/wikidata-dump-processing";
           tag = "latest";
-          # TODO: copy self to root it messy
-          contents = with pkgs; [ pythonEnv bash coreutils self ];
-          # config.Cmd = "${pythonWithPackages}/bin/python";
-          config.Cmd = "${pkgs.bash}/bin/bash";
+          contents = with pkgs; [ pythonWithPackages bash coreutils ];
+          # TODO: do not copy .gitignore'd files
+          fakeRootCommands = "cp -r ${self} /workspace";
+          config = {
+            Cmd = ["${pythonWithPackages}/bin/python" "-m" "dask" "worker" "dask-scheduler.rtti.de:8786"];
+            # Cmd = ["${pkgs.bash}/bin/bash"];
+          };
         };
       };
 
@@ -171,6 +177,14 @@
             docker compose up
             # docker run --rm -i -t wikidata-dump-processing
           '')
+
+          (pkgs.writeShellScriptBin "docker-build-and-push" ''
+            set -e
+
+            nix build .#packages.dockerImage
+            ./result | docker load
+            docker push roti4wmde/wikidata-dump-processing
+          '')
         ];
 
         shellHook = ''
@@ -178,12 +192,13 @@
 
           cat << _EOF
 
-        provision       - rent servers from hetzner
-        bootstrap       - install nixos and deploy configuration
-        deploy          - redeploy configuration
-        shell-workers   - ssh into worker machines using tmux
-        shell-scheduler - ssh into scheduler machine
-        run-in-docker   - build and run in a local docker container
+        provision               - rent servers from hetzner
+        bootstrap               - install nixos and deploy configuration
+        deploy                  - redeploy configuration
+        shell-workers           - ssh into worker machines using tmux
+        shell-scheduler         - ssh into scheduler machine
+        run-in-docker           - build and run in a local docker container
+        docker-build-and-push   - build image and push to dockerhub
 _EOF
         '';
       };

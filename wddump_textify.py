@@ -7,8 +7,7 @@ import setproctitle
 from dask.distributed import Client, LocalCluster
 
 from wddump import read_wikidata_dump, line_to_entity
-import embeddings
-import postgres
+from . import embeddings, postgres
 
 
 
@@ -200,7 +199,7 @@ def handle_embed_queue():
     setproctitle.setproctitle("wddump-embed-queue")
     print("Start handle embed queue...")
 
-    scheduler_address = '213.173.105.86:19596'
+    scheduler_address = 'dask-scheduler.rtti.de:8786'
     daskCluster = Client(scheduler_address)
 
     # daskCluster = Client(

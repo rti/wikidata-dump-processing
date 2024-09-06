@@ -14,9 +14,14 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs { 
         inherit system; 
-        # config = {
-        #   rocmSupport = true;
-        # }; 
+        config = {
+          # rocmSupport = true;
+
+          allowUnfree = true;
+          cudaSupport = true;
+          # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
+          # cudaCapabilities = ["8.0" "8.6" "8.9"];
+        }; 
       };
       pythonPackages = ps: with ps; [
         torch

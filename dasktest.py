@@ -2,8 +2,11 @@ from dask.distributed import Client
 import time
 
 def process(arg):
-    time.sleep(1)
-    return arg
+    # time.sleep(1)
+    # return arg
+    import torch
+    has_cuda = torch.cuda.is_available()
+    return f"{has_cuda=}"
 
 def main():
     client = Client("dask-scheduler.rtti.de:8786")

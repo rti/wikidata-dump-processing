@@ -6,6 +6,7 @@ import asyncio
 import aiofiles
 import os
 
+# https://superfastpython.com/asyncio-to_thread/
 
 async def handle_lines(pool, line_handler_func, chunk_of_lines):
     return pool.map(line_handler_func, chunk_of_lines)

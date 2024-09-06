@@ -22,6 +22,14 @@
           # https://en.wikipedia.org/wiki/CUDA#GPUs_supported
           # cudaCapabilities = ["8.0" "8.6" "8.9"];
         }; 
+        # overlays = [
+        #   (final: prev: {
+        #    pythonPackagesExtensions = [(py-final: py-prev: {
+        #        torch = py-final.torch-bin;
+        #        # torchaudio = py-final.torchaudio-bin; # TODO: should be also enabled
+        #        torchvision = py-final.torchvision-bin;
+        #        })];
+        #    })];
       };
       pythonPackages = ps: with ps; [
         torch

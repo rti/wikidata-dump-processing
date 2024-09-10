@@ -32,9 +32,7 @@ def read_gz_in_lines(file_path, chunk_size=1024*1024):
             yield buffer
 
 if __name__ == "__main__":
-    # for line in read_gz_in_lines(PATH):
-    #     handle_chunk(line)
-    #     print("---")
+    items_per_second_list = []
 
     start = time.time()
     for batch in batch_lines(lambda: read_gz_in_lines(PATH), BATCH):
@@ -43,5 +41,10 @@ if __name__ == "__main__":
         handle_batch(batch)
         batchsize = len(batch)
         items_per_second = batchsize / duration
+        items_per_second_list.append(items_per_second)
+
+        avg = sum(items_per_second_list) / len(items_per_second_list)
+
         print(f"{duration=}")
         print(f"{items_per_second=:.1f}")
+        print(f"{avg=:.1f}")
